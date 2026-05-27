@@ -5,7 +5,7 @@ import { WorkTypesService } from './work-types.service';
 class CreateWorkTypeDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 }
 
 @Controller('work-types')

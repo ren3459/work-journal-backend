@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import {
   IsDateString,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -38,9 +39,23 @@ class CreateWorkJournalRecordDto {
   @IsDateString()
   date!: string;
 
+  @IsDateString()
+  @IsOptional()
+  completedAt?: string;
+
   @IsString()
   @IsOptional()
   comment?: string;
+}
+
+class FindWorkJournalPageQueryDto {
+  @IsString()
+  @IsOptional()
+  sortField?: string;
+
+  @IsIn(['ascend', 'descend', 'asc', 'desc'])
+  @IsOptional()
+  sortOrder?: string;
 }
 
 @Controller('work-journal')
@@ -51,8 +66,12 @@ export class WorkJournalController {
   findPage(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('pageSize', new DefaultValuePipe(5), ParseIntPipe) pageSize: number,
+    @Query() query: FindWorkJournalPageQueryDto,
   ) {
-    return this.workJournalService.findPage(page, pageSize);
+    return this.workJournalService.findPage(page, pageSize, {
+      sortField: query.sortField,
+      sortOrder: query.sortOrder,
+    });
   }
 
   @Post()
