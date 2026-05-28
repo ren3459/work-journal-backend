@@ -63,10 +63,7 @@ export class WorkJournalService {
     options: FindWorkJournalPageOptions = {},
   ): Promise<WorkJournalPage> {
     const skip = (page - 1) * pageSize;
-    const sortOrder =
-      options.sortOrder === 'ascend' || options.sortOrder === 'asc'
-        ? 'asc'
-        : 'desc';
+    const sortOrder = options.sortOrder === 'ascend' ? 'asc' : 'desc'; //TODO: обдумать
     const items: WorkJournalRecord[] = await this.prisma.workLog.findMany({
       skip,
       take: pageSize,
@@ -95,6 +92,14 @@ export class WorkJournalService {
         completedAt: payload.completedAt ? new Date(payload.completedAt) : null,
         comment: payload.comment || null,
       },
+      include: {
+        workType: true,
+      },
+    });
+  }
+  async findById(workLogId: number) {
+    return this.prisma.workLog.findUnique({
+      where: { id: workLogId },
       include: {
         workType: true,
       },

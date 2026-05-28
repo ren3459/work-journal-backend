@@ -3,6 +3,7 @@ import {
   Controller,
   DefaultValuePipe,
   Get,
+  Param,
   ParseIntPipe,
   Post,
   Query,
@@ -77,5 +78,10 @@ export class WorkJournalController {
   @Post()
   create(@Body() payload: CreateWorkJournalRecordDto) {
     return this.workJournalService.create(payload);
+  }
+
+  @Get(':id')
+  findById(@Param('id', ParseIntPipe) workLogId: number) {
+    return this.workJournalService.findById(workLogId);
   }
 }
