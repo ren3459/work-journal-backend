@@ -32,7 +32,9 @@ interface FindWorkJournalPageOptions {
 const getOrderBy = (
   sortField: string | undefined,
   sortOrder: Prisma.SortOrder,
-): Prisma.WorkLogOrderByWithRelationInput => {
+):
+  | Prisma.WorkLogOrderByWithRelationInput
+  | Prisma.WorkLogOrderByWithRelationInput[] => {
   switch (sortField) {
     case 'typeWork':
       return { workType: { name: sortOrder } };
@@ -41,8 +43,17 @@ const getOrderBy = (
     case 'volume':
       return { volume: sortOrder };
     case 'completedAt':
-    case 'status':
       return { completedAt: sortOrder };
+    case 'status':
+      return [
+        {
+          completedAt: {
+            sort: sortOrder,
+            nulls: sortOrder === 'asc' ? 'first' : 'last',
+          },
+        },
+        { date: 'desc' },
+      ];
     case 'createdAt':
       return { createdAt: sortOrder };
     case 'updatedAt':
@@ -51,6 +62,17 @@ const getOrderBy = (
     default:
       return { date: sortOrder };
   }
+};
+
+const toDateOnly = (date: string): Date => new Date(`${date}T00:00:00.000Z`);
+
+const getTodayDateOnly = (): Date => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+
+  return toDateOnly(`${year}-${month}-${day}`);
 };
 
 @Injectable()
@@ -63,7 +85,7 @@ export class WorkJournalService {
     options: FindWorkJournalPageOptions = {},
   ): Promise<WorkJournalPage> {
     const skip = (page - 1) * pageSize;
-    const sortOrder = options.sortOrder === 'ascend' ? 'asc' : 'desc'; //TODO: обдумать
+    const sortOrder = options.sortOrder === 'ascend' ? 'asc' : 'desc';
     const items: WorkJournalRecord[] = await this.prisma.workLog.findMany({
       skip,
       take: pageSize,
@@ -88,8 +110,10 @@ export class WorkJournalService {
         executorName: payload.executorName,
         unit: payload.unit,
         volume: payload.volume,
-        date: new Date(payload.date),
-        completedAt: payload.completedAt ? new Date(payload.completedAt) : null,
+        date: toDateOnly(payload.date),
+        completedAt: payload.completedAt
+          ? toDateOnly(payload.completedAt)
+          : null,
         comment: payload.comment || null,
       },
       include: {
@@ -97,6 +121,31 @@ export class WorkJournalService {
       },
     });
   }
+
+  async deleteById(workLogId: number) {
+    return this.prisma.workLog.delete({ where: { id: workLogId } });
+  }
+
+  async updateById(workLogId: number, payload: CreateWorkJournalRecordPayload) {
+    return this.prisma.workLog.update({
+      where: { id: workLogId },
+      data: {
+        workTypeId: payload.workTypeId,
+        executorName: payload.executorName,
+        unit: payload.unit,
+        volume: payload.volume,
+        date: toDateOnly(payload.date),
+        completedAt: payload.completedAt
+          ? toDateOnly(payload.completedAt)
+          : null,
+        comment: payload.comment || null,
+      },
+      include: {
+        workType: true,
+      },
+    });
+  }
+
   async findById(workLogId: number) {
     return this.prisma.workLog.findUnique({
       where: { id: workLogId },
@@ -104,5 +153,19 @@ export class WorkJournalService {
         workType: true,
       },
     });
+  }
+
+  async getStatistic() {
+    const workLogsCompleted = await this.prisma.workLog.count({
+      where: { completedAt: getTodayDateOnly() },
+    });
+    const workLogsNOTCompleted = await this.prisma.workLog.count({
+      where: { completedAt: null },
+    });
+
+    return {
+      completedWorks: workLogsCompleted,
+      notCompletedWorks: workLogsNOTCompleted,
+    };
   }
 }

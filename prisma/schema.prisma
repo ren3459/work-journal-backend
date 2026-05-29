@@ -15,8 +15,8 @@ model WorkType {
 
 model WorkLog {
   id           Int      @id @default(autoincrement())
-  date         DateTime
-  completedAt  DateTime?
+  date         DateTime @db.Date
+  completedAt  DateTime? @db.Date
   volume       Float
   unit         String
   executorName String

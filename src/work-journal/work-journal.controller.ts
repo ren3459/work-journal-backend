@@ -2,9 +2,11 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -78,6 +80,24 @@ export class WorkJournalController {
   @Post()
   create(@Body() payload: CreateWorkJournalRecordDto) {
     return this.workJournalService.create(payload);
+  }
+
+  @Get('statistic')
+  getStatistic() {
+    return this.workJournalService.getStatistic();
+  }
+
+  @Delete(':id')
+  deleteById(@Param('id', ParseIntPipe) workLogId: number) {
+    return this.workJournalService.deleteById(workLogId);
+  }
+
+  @Patch(':id')
+  updateById(
+    @Param('id', ParseIntPipe) workLogId: number,
+    @Body() payload: CreateWorkJournalRecordDto,
+  ) {
+    return this.workJournalService.updateById(workLogId, payload);
   }
 
   @Get(':id')
