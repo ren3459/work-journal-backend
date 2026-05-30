@@ -104,6 +104,12 @@ export class WorkJournalService {
   }
 
   create(payload: CreateWorkJournalRecordPayload): Promise<WorkJournalRecord> {
+    if (
+      payload.completedAt &&
+      new Date(payload.completedAt) < toDateOnly(payload.date)
+    ) {
+      throw new Error('Дата завершения не может быть раньше даты выполнения');
+    }
     return this.prisma.workLog.create({
       data: {
         workTypeId: payload.workTypeId,
@@ -127,6 +133,13 @@ export class WorkJournalService {
   }
 
   async updateById(workLogId: number, payload: CreateWorkJournalRecordPayload) {
+    if (
+      payload.completedAt &&
+      new Date(payload.completedAt) < toDateOnly(payload.date)
+    ) {
+      throw new Error('Дата завершения не может быть раньше даты выполнения');
+    }
+
     return this.prisma.workLog.update({
       where: { id: workLogId },
       data: {
